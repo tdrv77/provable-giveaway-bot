@@ -13,7 +13,9 @@ def launcher():
 
     # Initialize extension (command) packages
     initial_extensions = (
-
+        'bot.cogs.giveaway',
+        'bot.cogs.help',
+        'bot.cogs.owner',
 
     )
     for extension in initial_extensions:

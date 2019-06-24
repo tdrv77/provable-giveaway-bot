@@ -55,7 +55,6 @@ class CustomBot(commands.Bot):
         print('------')
         print(f'Logged in as: {self.user.name} (ID: {self.user.id})')
         print('------')
-        # change this for the 'Playing xxx' status
         presence = f'Prefix: {self.command_prefix}' if not settings.DEBUG else 'sensei anone'
         await self.change_presence(activity=discord.Game(name=presence))
 
@@ -64,13 +63,28 @@ class CustomBot(commands.Bot):
         await self.invoke(ctx)
 
     async def on_command_error(self, context, error):
+
+        if isinstance(error, commands.MissingRole):
+            await context.say_as_embed(
+                f'{context.author.mention}, you must have **<@&{error.missing_role}>** role to use this command!',
+                color='error', delete_after=5)
+            await context.message.delete()
+            return
+
         if isinstance(error, commands.BadArgument):
             await context.say_as_embed(str(error), color='error')
+            return
 
-        if isinstance(error, (discord.ClientException, commands.CommandInvokeError)):
-            await context.say_as_embed(str(error), color='error')
-
-        if settings.DEBUG:
-            await context.send(f'```py\n{traceback.format_exc()}\n```')
+        if isinstance(error, commands.MissingRequiredArgument) and context.command.qualified_name != 'help':
+            prefix = context.prefix
+            command_name = context.invoked_with
+            embed = discord.Embed(
+                title=f'How to use the `{command_name}` command',
+                description=
+                context.command.help.format(prefix=prefix, command_name=command_name),
+                color=settings.EMBED_DEFAULT_COLOR
+            )
+            await context.send(embed=embed)
+            return
 
         await super().on_command_error(context, error)

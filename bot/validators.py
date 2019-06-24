@@ -1,14 +1,14 @@
 import asyncio
 
 PREDEFINED_RESPONSES = [
-    'n', 'no', 'cancel',
+    'cancel',
 ]
 
 
 async def validate_input(context, inputs, **kwargs):
     """
     Validates the `inputs` as a list in the same channel.
-    [Optional] `author`: Is the context.author if not specified, otherwise it's
+    [Optional] `authors`: Is the context.author if not specified, otherwise it's
     a discord.py User object, or a list of User objects.
     [Optional] `allow_cancel`: Allows the author to cancel the validation
     with words described in PREDEFINED_RESPONSES & the invoked command,
@@ -25,6 +25,7 @@ async def validate_input(context, inputs, **kwargs):
     authors = kwargs.get('authors', [context.author])
     allow_cancel = kwargs.get('allow_cancel', True)
     timeout = kwargs.get('timeout', 180)
+    max_length = kwargs.get('max_length', 2000)
     only_dm = kwargs.get('only_dm', False)
 
     if type(authors) != list:
@@ -54,7 +55,7 @@ async def validate_input(context, inputs, **kwargs):
                 return True
             elif inputs is None:
                 return True
-            elif message.content.lower() in inputs:
+            elif message.content.lower() in inputs and len(message.content) <= max_length:
                 return True
 
             return False

@@ -1,6 +1,7 @@
 import discord
 from discord.ext import commands
-from .helptexts import _help
+from .helptexts import _help_brief, _help_help
+
 
 class HelpCommands(commands.Cog):
 
@@ -8,21 +9,20 @@ class HelpCommands(commands.Cog):
         self.bot = bot
         self.__cog_name__ = 'Help Commands'
 
-    @commands.command(name='help', help=_help)
+    @commands.command(name='help', help=_help_help, brief=_help_brief)
     async def _help_message(self, context, command_name: str):
 
         command_obj = discord.utils.get(context.bot.commands, name=command_name)
         if not command_obj:
             command_obj = discord.utils.get(context.bot.commands, aliases=[command_name])
 
-        if not command_obj:
+        if not command_obj or command_obj.hidden:
             await context.say_as_embed(
                 f'There are no commands named `{command_name}`.', color='error')
             return
 
         await context.say_as_embed(
-            f'```{context.prefix}{command_obj.qualified_name} {command_obj.signature}```\n'
-            f'{command_obj.help}'
+            command_obj.help.format(prefix=context.prefix, command_name=command_obj.qualified_name)
         )
 
     @_help_message.error
@@ -37,7 +37,7 @@ class HelpCommands(commands.Cog):
                 for c in cog.get_commands():
                     if c.hidden:
                         continue
-                    command_brief = c.help.split("\n")[0] if c.help else '-'
+                    command_brief = c.brief if c.brief else '-'
                     cog_commands_txt += f'• {c.qualified_name:<8} : {command_brief}\n'
                 if cog_commands_txt:
                     available_commands_txt += f'{cog.qualified_name}\n{cog_commands_txt}\n'

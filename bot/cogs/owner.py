@@ -4,7 +4,7 @@ from discord.ext import commands
 from django.conf import settings
 
 
-class OwnerCommands:
+class OwnerCommands(commands.Cog):
     """Owner-only cogs that make the bot dynamic."""
 
     def __init__(self, bot):
