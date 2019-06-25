@@ -3,6 +3,7 @@ import hmac
 
 from django.db import models
 from django.utils import timezone
+
 from utils.core import generate_server_seed
 
 
@@ -38,23 +39,20 @@ class DiscordUser(models.Model):
             return hashlib.sha512(self.server_seed.encode()).hexdigest()
         return None
 
-    def pfair_randomize(self, min=0, max=10):
+    def pfair_randomize(self, index):
 
-        while True:
-            HMAC = hmac.new(
-                self.server_seed.encode(),
-                f'{self.user_seed}-{self.nonce}'.encode(),
-                'sha512'
-            )
-            hmac_str = HMAC.hexdigest()
-            to_decimal = int(hmac_str[:5], 16)
+        HMAC = hmac.new(
+            self.server_seed.encode(),
+            f'{self.user_seed}-{self.nonce}'.encode(),
+            'sha512'
+        )
+        hmac_str = HMAC.hexdigest()
+        to_decimal = int(hmac_str[:5], 16)
 
-            result = to_decimal % (max + 1)
+        result = to_decimal % index
 
-            self.nonce += 1
-
-            if result >= min:
-                self.save()
-                break
+        self.nonce += 1
+        self.save()
 
         return result, self.nonce - 1
+

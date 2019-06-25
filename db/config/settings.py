@@ -141,3 +141,9 @@ BOT_PREFIX = config('BOT_PREFIX', default='!')
 
 # Discord Embed settings
 EMBED_DEFAULT_COLOR = int(config('EMBED_DEFAULT_COLOR', default='0x1abc9c'), 16)
+
+# Emojis Settings
+REACT_EMOJI_ID = 587191414446751749
+
+# Task Timing Settings
+UPDATE_GIVEAWAY_REMAINING_TIME_DELAY = 60

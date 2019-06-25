@@ -88,3 +88,5 @@ class CustomBot(commands.Bot):
             return
 
         await super().on_command_error(context, error)
+
+        traceback.print_exc()
