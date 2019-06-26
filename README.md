@@ -6,7 +6,7 @@ This bot was made as an entry for **Discord Hackweek #1**
 This bot will help you:
 - **Specify end date/time for your giveaway like you normally do**. No more weird suffixes and prefixes to show the bot where the hour/minute is.
 - **Provide yourself with a Giveaway ID**, then you can `end`, `reroll`, `delete`, or retrieve your giveaway's `result` as a `*.txt` file. No more Discord Developer mode to get that spoopy Message ID.
-- **Prove the randomness of the Giveaway result**, in case someone is salty and throws some hate at RNGesu.
+- **Prove the randomness of the Giveaway result**, in case someone is salty and throws some hate at RNGesus.
 
 ## Requirements
 This bot uses **Python (v.3.6+)** for logic and **PostgreSQL (v.10+)** to handle database and transactions. So make sure to have them prepared on your machine.
@@ -32,7 +32,7 @@ Below is the installtion guide:
 - Run `pip install -r requirements.txt` and wait for it to install required packages.
 - Run `python3 manage.py migrate` to apply database schemas.
 - Finally, run `python3 run.py` to run the bot.
-- *Optional* Run `python3 manage.py runserver` to run the bot's Admin Panel where its data is display cool and all. (You will need to create a superuser account using `python3 manage.py createsuperuser` to login into the Admin Panel.)
+- *Optional* Run `python3 manage.py runserver` to run the bot's Admin Panel where its data is displayed cool and all. (You will need to create a superuser account using `python3 manage.py createsuperuser` to login into the Admin Panel.)
 
 ## Commands
 ### Giveaway Commands
