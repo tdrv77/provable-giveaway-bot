@@ -14,7 +14,7 @@ This bot uses **Python (v.3.6+)** for logic and **PostgreSQL (v.10+)** to handle
 Main packages used:
 - [discord.py](https://discordpy.readthedocs.io/en/latest/) - Main handler for the bot and its logic.
 - [django](https://www.djangoproject.com/) - Django's ORM to handle transactions to the database.
-- [dateparser](https://dateparser.readthedocs.io/en/latest/) - User input's date and time that increase the bot's Intelligence by 100.
+- [dateparser](https://dateparser.readthedocs.io/en/latest/) - User input's date and time recognition that increases the bot's Intelligence by 100.
 - [python-decouple](https://github.com/henriquebastos/python-decouple/) - Discord Staff tells you not to disclose your bot token, so here it is to fulfill this.
 
 More detailed required packages can be found in the [requirements.txt](requirements.txt)
