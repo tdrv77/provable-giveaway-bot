@@ -1,5 +1,5 @@
-#Provable-Result Givewaway Bot
-##Introduction
+# Provable-Result Givewaway Bot
+## Introduction
 **Discord's Giveaway Bot just got a lot better!**
 This bot was made as an entry for **Discord Hackweek #1**
 
@@ -8,7 +8,7 @@ This bot will help you:
 - **Provide yourself with a Giveaway ID**, then you can `end`, `reroll`, `delete`, or retrieve your giveaway's `result` as a `*.txt` file. No more Discord Developer mode to get that spoopy Message ID.
 - **Prove the randomness of the Giveaway result**, in case someone is salty and throws some hate at RNGesu.
 
-##Requirements
+## Requirements
 This bot uses **Python (v.3.6+)** for logic and **PostgreSQL (v.10+)** to handle database and transactions. So make sure to have them prepared on your machine.
 
 Main packages used:
@@ -19,7 +19,7 @@ Main packages used:
 
 More detailed required packages can be found in the [requirements.txt](requirements.txt)
 
-##Installation
+## Installation
 Considering how big the current `GiveawayBot#2381` is, this bot is supposed to be hosted by someone generous enough to afford a good machine that can handle a good few thousands of giveaways.
 
 Below is the installtion guide:
@@ -34,25 +34,25 @@ Below is the installtion guide:
 - Finally, run `python3 run.py` to run the bot.
 - *Optional* Run `python3 manage.py runserver` to run the bot's Admin Panel where its data is display cool and all. (You will need to create a superuser account using `python3 manage.py createsuperuser` to login into the Admin Panel.)
 
-##Commands
-###Giveaway Commands
+## Commands
+### Giveaway Commands
 - `create` : Interactively setup a Giveaway.
 - `end` : End your On going Giveaway.
 - `reroll` : Reroll your Ended Giveaway.
 - `delete` : Delete your Giveaway.
 - `result` : Retrieve Result of your Ended Giveaway (result will be sent as a `*.txt` file).
 
-###Provable Fairness Commands
+### Provable Fairness Commands
 - `algorithm` : Explains the Randomization Algorithm and how you can check for correctness of your Giveaway result.
 - `myseed` : Shows your Provable Fairness Information.
 - `newseed` : Generates new Provable Fairness Information.
 
-###Help Commands
+### Help Commands
 - `help` : Shows help message, type `help [command name]` to get detailed help for that command.
 
-##License
+## License
 This repository is licensed under [GNU GPLv3](https://choosealicense.com/licenses/gpl-3.0/).
 
 For more information, see [LICENSE.md](LICENSE.md)
-##Contribution
+## Contribution
 *Under construction*
