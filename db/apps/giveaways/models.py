@@ -17,7 +17,8 @@ class Giveaway(models.Model):
     winner_count = models.SmallIntegerField()
     participants = models.ManyToManyField(DiscordUser, related_name='+', blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    ended_at = models.DateTimeField()
+    ending_at = models.DateTimeField()
+    ended_at = models.DateTimeField(blank=True, null=True)
     ended_time_str = models.CharField(max_length=200)
     success = models.BooleanField(
         null=True,
@@ -36,13 +37,19 @@ class Giveaway(models.Model):
     def __str__(self):
         return f'{self.prize} [{self.status}]'
 
+    def mark_success(self, success: bool):
+        self.refresh_from_db()
+        self.success = success
+        self.ended_at = timezone.now()
+        self.save()
+
     @property
-    def ended(self):
-        return timezone.now() > self.ended_at
+    def passed_ending_time(self):
+        return timezone.now() > self.ending_at
 
     @property
     def status(self):
-        return 'Ended' if self.ended else 'On going'
+        return 'Ended' if self.ended_at else 'On going'
 
     @property
     def discord_channel(self):
@@ -69,6 +76,47 @@ class Giveaway(models.Model):
             return None
 
     @property
+    def winners_discord(self):
+        return '\n'.join([
+            f'• <@{winner.user.discord_id}> | '
+            f'Index: {winner.index} | '
+            f'Nonce: {winner.nonce}'
+            for winner in self.winners.all()
+        ])
+
+    @property
+    def info_text(self):
+        txt = (
+            f'== Creator Information ==\n'
+            f'• Discord Tag  : {self.creator.__str__()}\n'
+            f'• Discord ID   : {self.creator.discord_id}\n\n'
+            f'== Giveaway Information ==\n'
+            f'• Prize        : {self.prize}\n'
+            f'• Winner Count : {self.winner_count}\n'
+            f'• Participants : {self.participants.count()}\n'
+            f'• Sure Win     : {self.winner_count >= self.participants.count()}\n'
+            f'• Created at   : {self.created_at:%H:%M:%S %A %B %d, %Y (%Z)}\n'
+            f'• Ending at    : {self.ending_at:%H:%M:%S %A %B %d, %Y (%Z)}\n'
+            f'• Ended at     : {"On going" if not self.ended_at else self.ended_at.strftime("%H:%M:%S %A %B %d, %Y (%Z)")}\n'
+            f'• Success      : {self.success}\n'
+            f'• Server       : {self.guild.name} [{self.guild.guild_id}]\n\n'
+            f'== Winners Information ==\n'
+            f'{"User Tag":^20}|{"User ID":^20}|{"Index":^8}|{"Nonce":^8}|\n'
+        )
+        if self.winners.exists():
+            txt += '\n'.join([
+                f'{winner.user.__str__():<20}|'
+                f'{winner.user.discord_id:^20}|'
+                f'{winner.index:>7} |'
+                f'{winner.nonce:>7} |'
+                for winner in self.winners.all()
+            ])
+        else:
+            txt += f'{"None":=^60}'
+
+        return txt
+
+    @property
     def embed(self):
         if self.success is not None:
             title = 'GIVEAWAY ENDED'
@@ -87,20 +135,15 @@ class Giveaway(models.Model):
             f'• Prize: **{self.prize}**\n'
             f'• Winners: **{self.winner_count}**\n'
             f'• Time remaining: **{time_remaining}**\n\n',
-            timestamp=self.ended_at,
+            timestamp=self.ending_at,
             color=color,
         )
 
         if self.winners.exists():
-            txt = '\n'.join([
-                f'• <@{winner.user.discord_id}> | '
-                f'Index: {winner.index} | '
-                f'Nonce: {winner.nonce}'
-                for winner in self.winners.all()
-            ])
+
             embed.add_field(
                 name='Winners',
-                value=txt
+                value=self.winners_discord
             )
 
         elif self.success is None:
@@ -119,14 +162,13 @@ class Giveaway(models.Model):
         ga_message = await self.discord_message()
 
         if not ga_message:
-            self.success = False
-            self.save()
+            self.mark_success(False)
             print(f'Giveaway with ID [{self.id}] failed because the Discord message was not found.')
             return
 
         # bypass the ended criteria if for_task is False
         if for_task:
-            criteria = self.ended
+            criteria = self.passed_ending_time
         elif for_reroll:
             if self.success is None:
                 await context.say_as_embed(
@@ -154,8 +196,7 @@ class Giveaway(models.Model):
                     break
 
             if not reaction:
-                self.success = False
-                self.save()
+                self.mark_success(False)
                 message = f'Giveaway with ID `{self.id}` ended because it has no reactions.'
                 await self.send_completion_message(ga_message.channel, message=message)
                 return await ga_message.edit(embed=self.embed)
@@ -166,8 +207,7 @@ class Giveaway(models.Model):
                     qualified_entries.append(user)
 
             if not qualified_entries:
-                self.success = True
-                self.save()
+                self.mark_success(True)
                 message = f'Giveaway with ID `{self.id}` ended with no winners.'
                 await self.send_completion_message(ga_message.channel, message=message)
                 return await ga_message.edit(embed=self.embed)
@@ -210,12 +250,14 @@ class Giveaway(models.Model):
             self.participants.add(*[get_user_obj(entry)[0] for entry in qualified_entries])
 
             # update the giveaway object
-            self.success = True
-            self.save()
-
-        await ga_message.edit(embed=self.embed)
-        if self.success is not None:
+            self.mark_success(True)
             await self.send_completion_message(ga_message.channel)
+            return await ga_message.edit(embed=self.embed)
+
+        # only edit ongoing giveaway messages
+        self.refresh_from_db()
+        if not self.ended_at:
+            await ga_message.edit(embed=self.embed)
 
     async def send_completion_message(self, ga_channel, message=None):
 
@@ -230,8 +272,8 @@ class Giveaway(models.Model):
 
     @property
     def time_remaining(self):
-        if not self.ended:
-            return process_elapsed_time_text(self.ended_at - timezone.now())
+        if not self.passed_ending_time:
+            return process_elapsed_time_text(self.ending_at - timezone.now())
         else:
             return 'Ended'
 

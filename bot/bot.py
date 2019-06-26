@@ -64,6 +64,9 @@ class CustomBot(commands.Bot):
 
     async def on_command_error(self, context, error):
 
+        if isinstance(error, commands.CommandNotFound):
+            return
+
         if isinstance(error, commands.MissingRole):
             await context.say_as_embed(
                 f'{context.author.mention}, you must have **<@&{error.missing_role}>** role to use this command!',

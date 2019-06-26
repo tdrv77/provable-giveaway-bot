@@ -38,7 +38,7 @@ class HelpCommands(commands.Cog):
                     if c.hidden:
                         continue
                     command_brief = c.brief if c.brief else '-'
-                    cog_commands_txt += f'• {c.qualified_name:<8} : {command_brief}\n'
+                    cog_commands_txt += f'• {c.qualified_name:<9} : {command_brief}\n'
                 if cog_commands_txt:
                     available_commands_txt += f'{cog.qualified_name}\n{cog_commands_txt}\n'
 

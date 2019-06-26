@@ -10,7 +10,7 @@ class GiveawayAdmin(admin.ModelAdmin):
         'winner_count',
         'status',
         'created_at',
-        'ended_at',
+        'ending_at',
         'ended_time_str',
         'success',
         'guild',

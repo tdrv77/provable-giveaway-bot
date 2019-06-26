@@ -16,6 +16,7 @@ def launcher():
         'bot.cogs.giveaway',
         'bot.cogs.help',
         'bot.cogs.owner',
+        'bot.cogs.pfair',
 
         'bot.tasks.giveawaytask',
 

@@ -1,4 +1,4 @@
-from pprint import pprint
+import io
 
 import dateparser as dateparser
 import discord
@@ -7,7 +7,13 @@ from discord.ext import commands
 from django.conf import settings
 
 from db.apps.giveaways.models import Giveaway
-from .helptexts import _ga_brief, _ga_help
+from .helptexts import (
+    _ga_create_brief, _ga_create_help,
+    _ga_end_brief, _ga_end_help,
+    _ga_reroll_brief, _ga_reroll_help,
+    _ga_delete_brief, _ga_delete_help,
+    _ga_result_brief, _ga_result_help,
+)
 from utils.objects import get_user_obj, get_guild_obj
 from bot.validators import validate_input
 from bot.converters import OwnedGiveawayConverted
@@ -39,57 +45,7 @@ class GiveawayCommands(commands.Cog):
         self.bot = bot
         self.__cog_name__ = 'Giveaway Commands'
 
-    @commands.command(name='end', brief=_ga_brief, help=_ga_help)
-    @commands.guild_only()
-    @commands.check(manage_guild_or_giveaway_role)
-    async def _end_giveaway(self, context, ga_obj: OwnedGiveawayConverted):
-
-        ga_obj.bot = self.bot
-        await ga_obj.end(context=context)
-
-    @commands.command(name='reroll', brief=_ga_brief, help=_ga_help)
-    @commands.guild_only()
-    @commands.check(manage_guild_or_giveaway_role)
-    async def _reroll_giveaway(self, context, ga_obj: OwnedGiveawayConverted):
-
-        ga_obj.bot = self.bot
-        await ga_obj.end(for_reroll=True, context=context)
-
-    @commands.command(name='delete', brief=_ga_brief, help=_ga_help)
-    @commands.guild_only()
-    @commands.check(manage_guild_or_giveaway_role)
-    async def _delete_giveaway(self, context, ga_obj: OwnedGiveawayConverted):
-
-        await context.say_as_embed(
-            title='You are about to delete your Giveaway',
-            description=
-            f'• ID: `{ga_obj.id}`\n'
-            f'• Prize: **{ga_obj.prize}`\n'
-            f'• Winners: **{ga_obj.winner_count}**\n'
-            f'• Time remaining: **{ga_obj.time_remaining}**\n\n'
-            f'**Proceed to deletion?**\n'
-            f'Y/N'
-        )
-
-        response = validate_input(context, inputs=['y', 'yes', 'n', 'no'])
-        if not response:
-            return
-
-        # tries to delete the giveaway message
-        ga_obj.bot = self.bot
-        discord_message = await ga_obj.discord_message()
-        if discord_message:
-            try:
-                await discord_message.delete()
-            except discord.HTTPException:
-                pass
-
-        await context.say_as_embed(
-            title=f'Giveaway ID [{ga_obj.id}] has been deleted',
-            color='success'
-        )
-
-    @commands.command(name='create', brief=_ga_brief, help=_ga_help)
+    @commands.command(name='create', brief=_ga_create_brief, help=_ga_create_help)
     @commands.guild_only()
     @commands.check(manage_guild_or_giveaway_role)
     async def _interactive_setup(self, context):
@@ -157,7 +113,7 @@ class GiveawayCommands(commands.Cog):
                     delete_after=5 * 2, color='error')
                 continue
 
-            ga_data['ended_at'] = parsed_dt
+            ga_data['ending_at'] = parsed_dt
             ga_data['ended_time_str'] = f'{parsed_dt:%H:%M:%S %A %B %d, %Y (%Z)}'
             break
 
@@ -252,32 +208,82 @@ class GiveawayCommands(commands.Cog):
         await context.say_as_embed(
             title='Giveaway Created!',
             description=
-            f'You can [click here]({ga_obj.message_jump_url}) to go to the Giveaway message.',
+            f'You can [click here]({ga_obj.message_jump_url}) to go to the Giveaway message.\n'
+            f'Giveaway ID: `{ga_obj.id}`',
             color='success'
         )
 
-    async def send_pfair_info(self, context, user_obj):
-        embed = discord.Embed(
-            title='New User Provable Fairness Information',
+    @commands.command(name='end', brief=_ga_end_brief, help=_ga_end_help)
+    @commands.guild_only()
+    @commands.check(manage_guild_or_giveaway_role)
+    async def _end_giveaway(self, context, ga_obj: OwnedGiveawayConverted):
+
+        ga_obj.bot = self.bot
+        await ga_obj.end(context=context)
+
+    @commands.command(name='reroll', brief=_ga_reroll_brief, help=_ga_reroll_help)
+    @commands.guild_only()
+    @commands.check(manage_guild_or_giveaway_role)
+    async def _reroll_giveaway(self, context, ga_obj: OwnedGiveawayConverted):
+
+        ga_obj.bot = self.bot
+        await ga_obj.end(for_reroll=True, context=context)
+
+    @commands.command(name='delete', brief=_ga_delete_brief, help=_ga_delete_help)
+    @commands.guild_only()
+    @commands.check(manage_guild_or_giveaway_role)
+    async def _delete_giveaway(self, context, ga_obj: OwnedGiveawayConverted):
+
+        await context.say_as_embed(
+            title='You are about to delete your Giveaway',
             description=
-            f'Hello {context.author.mention}! This is the first time you created a Giveaway with me, '
-            f'so here is your Provable Fairness Information:\n```\n'
-            f'• User Seed: {user_obj.user_seed}\n'
-            f'• Server Seed (hashed): {user_obj.server_seed_hashed}\n'
-            f'• Nonce: {user_obj.nonce}\n'
-            f'```',
-            color=settings.EMBED_DEFAULT_COLOR
+            f'• ID: `{ga_obj.id}`\n'
+            f'• Prize: **{ga_obj.prize}**\n'
+            f'• Winners: **{ga_obj.winner_count}**\n'
+            f'• Time remaining: **{ga_obj.time_remaining}**\n\n'
+            f'**Proceed to deletion?**\n'
+            f'Y/N'
         )
-        embed.add_field(
-            name='Please Don\'t Freak Out!',
-            value=
-            '**You can just ditch those information and proceed with the Giveaway creation**. '
-            'The info is good when someone goes salty and wants to check the result generated by my '
-            '**Randomization Algorithm** to pick the winners.\n'
-            f'Type `{context.prefix}algorithm` for more info.'
+
+        response = await validate_input(context, inputs=['y', 'yes', 'n', 'no'])
+        if not response:
+            return
+
+        # tries to delete the giveaway message
+        ga_obj.bot = self.bot
+        discord_message = await ga_obj.discord_message()
+        if discord_message:
+            try:
+                await discord_message.delete()
+            except discord.HTTPException as e:
+                print(e)
+                pass
+
+        ga_obj_id = ga_obj.id
+        ga_obj.delete()
+
+        await context.say_as_embed(
+            title=f'Giveaway ID [{ga_obj_id}] has been deleted',
+            color='success'
         )
-        embed.set_thumbnail(url=context.bot.user.avatar_url)
-        await context.send(embed=embed)
+
+    @commands.command(name='result', brief=_ga_result_brief, help=_ga_result_help)
+    @commands.guild_only()
+    @commands.check(manage_guild_or_giveaway_role)
+    @commands.bot_has_permissions(attach_files=True)
+    async def _request_giveaway_result(self, context, ga_obj: OwnedGiveawayConverted):
+
+        if not ga_obj.ended_at:
+            await context.say_as_embed(
+                f'{context.author.mention}, this Giveaway has not ended yet. '
+                f'You can only retrieve results of ended giveaways.', color='warning'
+            )
+            return
+
+        filename = f'GA{ga_obj.id}_{ga_obj.creator.discord_id}.txt'
+
+        str_data = io.BytesIO(ga_obj.info_text.encode())
+        await context.send(file=discord.File(str_data, filename))
 
     @_interactive_setup.error
     async def _error_handler(self, context, error):
