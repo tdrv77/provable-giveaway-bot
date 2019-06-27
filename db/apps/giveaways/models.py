@@ -23,7 +23,7 @@ class Giveaway(models.Model):
     success = models.BooleanField(
         null=True,
         help_text=
-        '• Yes: Giveaway happened successfully.<br/>'
+        '• Yes: Giveaway happened successfully (can be 0 winners or more).<br/>'
         '• No: Giveaway failed due to a Discord exception.<br/>'
         '• Unknown: Giveaway happening.'
     )
@@ -91,6 +91,7 @@ class Giveaway(models.Model):
             f'• Discord Tag  : {self.creator.__str__()}\n'
             f'• Discord ID   : {self.creator.discord_id}\n\n'
             f'== Giveaway Information ==\n'
+            f'• ID           : {self.id}\n'
             f'• Prize        : {self.prize}\n'
             f'• Winner Count : {self.winner_count}\n'
             f'• Participants : {self.participants.count()}\n'
@@ -159,16 +160,27 @@ class Giveaway(models.Model):
         return embed
 
     async def end(self, for_task=False, for_reroll=False, context=None):
+        """
+        End the Giveaway.
+        `for_task` is True -> use in tasks/giveawaytask.py
+        `for_reroll` is True -> use in `reroll` giveaway command
+        Otherwise -> use in `end` giveaway command
+        """
+
+        # fetch the message from Discord
         ga_message = await self.discord_message()
 
+        # message not found, or forbidden to see -> giveaway failed
+        # TODO: Set a threshold for a number of retries
         if not ga_message:
             self.mark_success(False)
-            print(f'Giveaway with ID [{self.id}] failed because the Discord message was not found.')
+            print(f'Giveaway ID [{self.id}] failed because the Discord message was not found.')
             return
 
-        # bypass the ended criteria if for_task is False
+        # criteria depends on whether the giveaway has passed its ending_at dt or not
         if for_task:
             criteria = self.passed_ending_time
+        # forbide rerolling on going giveaways (`success` is None)
         elif for_reroll:
             if self.success is None:
                 await context.say_as_embed(
@@ -176,10 +188,12 @@ class Giveaway(models.Model):
                     f'Use `{context.prefix}end {self.id}` if you want to end it.'
                 )
                 return
+            # deletes all previous winners
             self.winners.all().delete()
             criteria = True
+        # forbide ending ended giveaways (`success` is True)
         else:
-            if self.success is not None:
+            if self.success is True:
                 await context.say_as_embed(
                     f'Your Giveaway (ID: `{self.id}`) already ended. '
                     f'Use `{context.prefix}reroll {self.id}` if you want to reroll it.'
@@ -187,77 +201,84 @@ class Giveaway(models.Model):
                 return
             criteria = True
 
-        if criteria:
+        # ending criteria not met, just update the message
+        if not criteria:
+            # only edit ongoing giveaway messages
+            self.refresh_from_db()
+            if not self.ended_at:
+                await ga_message.edit(embed=self.embed)
+            return
 
-            reaction = None
-            for _react in ga_message.reactions:
-                if _react.emoji.id == settings.REACT_EMOJI_ID:
-                    reaction = _react
-                    break
+        # ending criteria met, time for some info gathering
+        reaction = None
+        # tries to find the reaction emoji from the message's reactions
+        for _react in ga_message.reactions:
+            if _react.emoji.id == settings.REACT_EMOJI_ID:
+                reaction = _react
+                break
 
-            if not reaction:
-                self.mark_success(False)
-                message = f'Giveaway with ID `{self.id}` ended because it has no reactions.'
-                await self.send_completion_message(ga_message.channel, message=message)
-                return await ga_message.edit(embed=self.embed)
-
-            qualified_entries = []
-            async for user in reaction.users():
-                if not user.bot:
-                    qualified_entries.append(user)
-
-            if not qualified_entries:
-                self.mark_success(True)
-                message = f'Giveaway with ID `{self.id}` ended with no winners.'
-                await self.send_completion_message(ga_message.channel, message=message)
-                return await ga_message.edit(embed=self.embed)
-
-            winners = []
-            # sure win
-            if len(qualified_entries) <= self.winner_count:
-                for entry in qualified_entries:
-                    _entry = WinnerEntry(entry, 0, 0)
-                    winners.append(_entry)
-            # chance win
-            else:
-
-                # loop until enough distinct winners
-                while len(winners) < self.winner_count:
-
-                    index, nonce = self.creator.pfair_randomize(len(qualified_entries))
-                    sorted_entries = sorted(qualified_entries, key=lambda x: x.id)
-
-                    winner = sorted_entries[index]
-                    _entry = WinnerEntry(winner, index, nonce)
-
-                    if _entry in winners:
-                        continue
-
-                    winners.append(_entry)
-
-            # update winner list
-            winner_objs = [
-                Winner(
-                    giveaway=self,
-                    user=get_user_obj(winner.discord)[0],
-                    index=winner.index,
-                    nonce=winner.nonce)
-                for winner in winners
-            ]
-            Winner.objects.bulk_create(winner_objs)
-
-            # update participant list
-            self.participants.add(*[get_user_obj(entry)[0] for entry in qualified_entries])
-
-            # update the giveaway object
-            self.mark_success(True)
-            await self.send_completion_message(ga_message.channel)
+        # reaction emoji not found, someone booli and removed the bot's reaction
+        if not reaction:
+            self.mark_success(False)
+            message = f'Giveaway [ID `{self.id}`] ended because it has no reactions.'
+            await self.send_completion_message(ga_message.channel, message=message)
             return await ga_message.edit(embed=self.embed)
 
-        # only edit ongoing giveaway messages
-        self.refresh_from_db()
-        if not self.ended_at:
-            await ga_message.edit(embed=self.embed)
+        # forming qualified entries from the list of reacted users
+        qualified_entries = []
+        async for user in reaction.users():
+            if not user.bot:
+                qualified_entries.append(user)
+
+        # no qualified entries, too bad it's ending with 0 winners
+        if not qualified_entries:
+            self.mark_success(True)
+            message = f'Giveaway [ID `{self.id}`] ended with no winners.'
+            await self.send_completion_message(ga_message.channel, message=message)
+            return await ga_message.edit(embed=self.embed)
+
+        # forming winners!
+        winners = []
+        # sure win, no Provable Fairness Information used
+        if len(qualified_entries) <= self.winner_count:
+            for entry in qualified_entries:
+                _entry = WinnerEntry(entry, 0, 0)
+                winners.append(_entry)
+        # chance win, the creator's PFI is used
+        else:
+
+            # loop until enough distinct winners
+            while len(winners) < self.winner_count:
+
+                index, nonce = self.creator.pfair_randomize(len(qualified_entries))
+                sorted_entries = sorted(qualified_entries, key=lambda x: x.id)
+
+                winner = sorted_entries[index]
+                _entry = WinnerEntry(winner, index, nonce)
+
+                if _entry in winners:
+                    continue
+
+                winners.append(_entry)
+
+        # update winner list to the database
+        winner_objs = [
+            Winner(
+                giveaway=self,
+                user=get_user_obj(winner.discord)[0],
+                index=winner.index,
+                nonce=winner.nonce)
+            for winner in winners
+        ]
+        Winner.objects.bulk_create(winner_objs)
+
+        # update participant list to the database
+        self.participants.add(*[get_user_obj(entry)[0] for entry in qualified_entries])
+
+        # cool now as it's ending with some winners!
+        self.mark_success(True)
+        await self.send_completion_message(ga_message.channel)
+        return await ga_message.edit(embed=self.embed)
 
     async def send_completion_message(self, ga_channel, message=None):
 

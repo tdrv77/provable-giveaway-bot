@@ -17,7 +17,7 @@ Main packages used:
 - [dateparser](https://dateparser.readthedocs.io/en/latest/) - User input's date and time recognition that increases the bot's Intelligence by 100.
 - [python-decouple](https://github.com/henriquebastos/python-decouple/) - Discord Staff tells you not to disclose your bot token, so here it is to fulfill this.
 
-More detailed required packages can be found in the [requirements.txt](requirements.txt)
+More detailed required packages can be found in the [`requirements.txt`](requirements.txt)
 
 ## Installation
 Considering how big the current `GiveawayBot#2381` is, this bot is supposed to be hosted by someone generous enough to afford a good machine that can handle a good few thousands of giveaways.
@@ -34,6 +34,10 @@ Below is the installtion guide:
 - Finally, run `python3 run.py` to run the bot.
 - *Optional* Run `python3 manage.py runserver` to run the bot's Admin Panel where its data is displayed cool and all. (You will need to create a superuser account using `python3 manage.py createsuperuser` to login into the Admin Panel.)
 
+## Bot Permissions
+- **Read Messages** and **Send Messages** (for interaction with bot)
+- **Attach Files** (for `result` command)
+- **Add Reactions** and **Use External Emojis** (for a cool and customized reaction emoji)
 ## Commands
 ### Giveaway Commands
 - `create` : Interactively setup a Giveaway.

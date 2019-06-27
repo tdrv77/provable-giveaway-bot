@@ -1,7 +1,4 @@
-import traceback
-import discord
 from discord.ext import commands
-from django.conf import settings
 
 
 class OwnerCommands(commands.Cog):

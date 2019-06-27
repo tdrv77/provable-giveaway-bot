@@ -1,11 +1,7 @@
-import discord
-
 from discord.ext import commands, tasks
 from django.conf import settings
-from django.utils import timezone
 
-from db.apps.giveaways.models import Giveaway, Winner
-from utils.objects import get_user_obj
+from db.apps.giveaways.models import Giveaway
 
 
 class UpdateGiveawayTimeRemaining(commands.Cog):
@@ -17,7 +13,7 @@ class UpdateGiveawayTimeRemaining(commands.Cog):
     def cog_unload(self):
         self.update_giveaway_time_remaining.cancel()
 
-    @tasks.loop(seconds=settings.TIMED_EVENT_DELAY if not settings.DEBUG else 5, reconnect=False)
+    @tasks.loop(seconds=settings.UPDATE_GIVEAWAY_REMAINING_TIME_DELAY if not settings.DEBUG else 5, reconnect=False)
     async def update_giveaway_time_remaining(self):
         ga_objs = Giveaway.objects.filter(success=None)
 

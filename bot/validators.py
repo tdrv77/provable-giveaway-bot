@@ -7,7 +7,7 @@ PREDEFINED_RESPONSES = [
 
 async def validate_input(context, inputs, **kwargs):
     """
-    Validates the `inputs` as a list in the same channel.
+    Validates `inputs` (list) in the same channel. Should only work for commands.
     [Optional] `authors`: Is the context.author if not specified, otherwise it's
     a discord.py User object, or a list of User objects.
     [Optional] `allow_cancel`: Allows the author to cancel the validation
@@ -17,6 +17,7 @@ async def validate_input(context, inputs, **kwargs):
     If None, it won't timeout until the bot dies. Default to 180.
     [Optional] `only_dm`: Sets whether the authors response is allowed only in DM or not.
     Default: False.
+    [Optional] `max_length`: Maximum length of user's input. Defaults to 2000
 
     Returns discord.py's Message object if passed.
     Returns False if failed.

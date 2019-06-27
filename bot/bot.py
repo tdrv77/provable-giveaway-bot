@@ -1,5 +1,5 @@
 import discord
-import traceback
+# import traceback
 from discord.ext import commands
 from django.conf import settings
 
@@ -51,6 +51,15 @@ class CustomContext(commands.Context):
 
 class CustomBot(commands.Bot):
 
+    def __init__(self, **kwargs):
+        infos = {
+            'command_prefix': '.' if settings.DEBUG is True else settings.BOT_PREFIX,
+            'owner_id': settings.BOT_OWNER_ID
+        }
+        super().__init__(**infos, **kwargs)
+        # remove the default 'help' command
+        self.remove_command('help')
+
     async def on_ready(self):
         print('------')
         print(f'Logged in as: {self.user.name} (ID: {self.user.id})')
@@ -91,5 +100,3 @@ class CustomBot(commands.Bot):
             return
 
         await super().on_command_error(context, error)
-
-        traceback.print_exc()

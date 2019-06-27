@@ -1,17 +1,12 @@
-# import discord
 import traceback
 from bot.bot import CustomBot
 from django.conf import settings
 
 
 def launcher():
-    prefix = '.' if settings.DEBUG is True else settings.BOT_PREFIX
+    bot = CustomBot()
 
-    bot = CustomBot(command_prefix=prefix, owner_id=209551520008503297)
-    # remove the default 'help' command
-    bot.remove_command('help')
-
-    # Initialize extension (command) packages
+    # Initialize extensions
     initial_extensions = (
         'bot.cogs.giveaway',
         'bot.cogs.help',

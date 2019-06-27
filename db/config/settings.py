@@ -138,12 +138,13 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 # Bot Settings
 BOT_TOKEN = config('BOT_TOKEN')
 BOT_PREFIX = config('BOT_PREFIX', default='!')
+BOT_OWNER_ID = config('BOT_OWNER_ID', cast=int, default=0)
 
 # Discord Embed settings
 EMBED_DEFAULT_COLOR = int(config('EMBED_DEFAULT_COLOR', default='0x1abc9c'), 16)
 
 # Emojis Settings
-REACT_EMOJI_ID = 587191414446751749
+REACT_EMOJI_ID = config('REACT_EMOJI_ID', cast=int, default=587191414446751749)
 
 # Task Timing Settings
-UPDATE_GIVEAWAY_REMAINING_TIME_DELAY = 60
+UPDATE_GIVEAWAY_REMAINING_TIME_DELAY = config('UPDATE_GIVEAWAY_REMAINING_TIME_DELAY', cast=int, default=60)

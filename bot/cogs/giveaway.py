@@ -50,10 +50,7 @@ class GiveawayCommands(commands.Cog):
     @commands.check(manage_guild_or_giveaway_role)
     async def _interactive_setup(self, context):
 
-        user_obj, created = get_user_obj(context.author)
-        # if created:
-        #     await self.send_pfair_info(context, user_obj)
-
+        user_obj, _ = get_user_obj(context.author)
         guild_obj, _ = get_guild_obj(context.guild)
 
         ga_data = {
@@ -66,7 +63,7 @@ class GiveawayCommands(commands.Cog):
         )
 
         response = await validate_input(context, inputs=None, max_length=200)
-        if response is None:
+        if response is False:
             return
 
         ga_data['prize'] = response.content
@@ -76,7 +73,7 @@ class GiveawayCommands(commands.Cog):
         )
 
         response = await validate_input(context, inputs=[str(n) for n in range(1, 21)])
-        if response is None:
+        if response is False:
             return
 
         ga_data['winner_count'] = int(response.content)
@@ -94,7 +91,7 @@ class GiveawayCommands(commands.Cog):
         while True:
 
             response = await validate_input(context, inputs=None)
-            if response is None:
+            if response is False:
                 return
 
             async with context.channel.typing():
@@ -125,7 +122,7 @@ class GiveawayCommands(commands.Cog):
         ga_channel = None
         while True:
             response = await validate_input(context, inputs=None)
-            if response is None:
+            if response is False:
                 return
 
             try:
@@ -180,7 +177,7 @@ class GiveawayCommands(commands.Cog):
         await context.send(embed=embed)
 
         response = await validate_input(context, inputs=['y', 'yes', 'n', 'no'])
-        if response is None:
+        if response is False:
             return
 
         if response.content.lower() not in ['y', 'yes']:
@@ -246,7 +243,7 @@ class GiveawayCommands(commands.Cog):
         )
 
         response = await validate_input(context, inputs=['y', 'yes', 'n', 'no'])
-        if not response:
+        if response is False:
             return
 
         # tries to delete the giveaway message
