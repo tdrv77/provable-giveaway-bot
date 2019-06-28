@@ -193,6 +193,7 @@ class GiveawayCommands(commands.Cog):
         try:
             ga_message = await ga_channel.send(embed=ga_obj.embed)
         except discord.HTTPException:
+            ga_obj.delete()
             await context.say_as_embed('Sending message failed. Please try again.', color='error')
             return
 
@@ -203,6 +204,7 @@ class GiveawayCommands(commands.Cog):
         # get the emoji
         emoji = self.bot.get_emoji(settings.REACT_EMOJI_ID)
         if not emoji:
+            ga_obj.delete()
             await context.say_as_embed(f'Emoji with ID {settings.REACT_EMOJI_ID} does not exist.', color='error')
             return
 
@@ -210,6 +212,7 @@ class GiveawayCommands(commands.Cog):
         try:
             await ga_message.add_reaction(emoji)
         except discord.HTTPException:
+            ga_obj.delete()
             await context.say_as_embed(f'Reacting with emoji {str(emoji)} failed.', color='error')
             return
 
