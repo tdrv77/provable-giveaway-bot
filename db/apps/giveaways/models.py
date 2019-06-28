@@ -119,16 +119,18 @@ class Giveaway(models.Model):
 
     @property
     def embed(self):
-        if self.success is not None:
+        if self.ended_at:
             title = 'GIVEAWAY ENDED'
             color = discord.Color.darker_grey()
             footer_text = 'Ended'
             time_remaining = 'Ended'
+            timestamp = self.ended_at
         else:
             title = f'<:emoji:{settings.REACT_EMOJI_ID}> Result-Provable Giveaway <:emoji:{settings.REACT_EMOJI_ID}>'
             color = settings.EMBED_DEFAULT_COLOR
             footer_text = 'Ends'
             time_remaining = self.time_remaining
+            timestamp = self.ending_at
 
         embed = discord.Embed(
             title=title,
@@ -136,7 +138,7 @@ class Giveaway(models.Model):
             f'• Prize: **{self.prize}**\n'
             f'• Winners: **{self.winner_count}**\n'
             f'• Time remaining: **{time_remaining}**\n\n',
-            timestamp=self.ending_at,
+            timestamp=timestamp,
             color=color,
         )
 
@@ -147,7 +149,7 @@ class Giveaway(models.Model):
                 value=self.winners_discord
             )
 
-        elif self.success is None:
+        elif not self.ended_at:
             embed.description += f'React with <:emoji:{settings.REACT_EMOJI_ID}> to enter!'
 
         embed.set_author(
