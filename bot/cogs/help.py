@@ -1,5 +1,7 @@
 import discord
 from discord.ext import commands
+from django.conf import settings
+
 from .helptexts import _help_brief, _help_help
 
 
@@ -42,14 +44,23 @@ class HelpCommands(commands.Cog):
                 if cog_commands_txt:
                     available_commands_txt += f'{cog.qualified_name}\n{cog_commands_txt}\n'
 
-            await context.say_as_embed(
-                title='List of available commands',
-                description=
-                f'Prefix: `{context.prefix}`\n'
+            embed = discord.Embed(
+                title=str(context.bot.user),
+                color=settings.EMBED_DEFAULT_COLOR
+            )
+            embed.add_field(
+                name='Prefix',
+                value=context.prefix,
+            )
+
+            embed.add_field(
+                name='List of available commands',
+                value=
                 f'```\n{available_commands_txt}```\n'
                 f'Type `{context.prefix}{context.invoked_with} [command name]`'
                 f' for more details on the command.',
-                color='info')
+            )
+            await context.send(embed=embed)
 
 
 def setup(bot):

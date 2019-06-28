@@ -13,7 +13,7 @@ class UpdateGiveawayTimeRemaining(commands.Cog):
     def cog_unload(self):
         self.update_giveaway_time_remaining.cancel()
 
-    @tasks.loop(seconds=settings.UPDATE_GIVEAWAY_REMAINING_TIME_DELAY if not settings.DEBUG else 5, reconnect=False)
+    @tasks.loop(seconds=settings.UPDATE_GIVEAWAY_REMAINING_TIME_DELAY if not settings.DEBUG else 5)
     async def update_giveaway_time_remaining(self):
         ga_objs = Giveaway.objects.filter(success=None)
 

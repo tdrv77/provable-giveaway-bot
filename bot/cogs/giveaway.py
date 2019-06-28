@@ -1,4 +1,5 @@
 import io
+import traceback
 
 import dateparser as dateparser
 import discord
@@ -58,6 +59,7 @@ class GiveawayCommands(commands.Cog):
             'guild': guild_obj,
         }
 
+        # step 1/4: Ask for prize name
         await context.say_as_embed(
             title='What is the **prize** for this giveaway? (Max: 200 characters)',
         )
@@ -68,6 +70,7 @@ class GiveawayCommands(commands.Cog):
 
         ga_data['prize'] = response.content
 
+        # step 2/4: Ask for number of winners
         await context.say_as_embed(
             title='How many winners are there for this giveaway? (Max: 20 winners)'
         )
@@ -78,13 +81,14 @@ class GiveawayCommands(commands.Cog):
 
         ga_data['winner_count'] = int(response.content)
 
+        # step 3/4: Ask for end date time of the giveaway
         await context.say_as_embed(
             title='When will this giveaway end?',
             description=
             'Enter as you want and I will try to understand you.\n'
             'Default Timezone (when not specified): `UTC`\n\n'
             'Example:\n'
-            '• in 10 hours\n'
+            '• in 10 hours and 30 minutes\n'
             '• 10AM June 24th, 2019 PDT'
         )
 
@@ -114,6 +118,7 @@ class GiveawayCommands(commands.Cog):
             ga_data['ended_time_str'] = f'{parsed_dt:%H:%M:%S %A %B %d, %Y (%Z)}'
             break
 
+        # step 4/4: Ask for a channel to post the giveaway message
         await context.say_as_embed(
             title='Finally, where should the giveaway message be posted?'
         )
@@ -159,6 +164,7 @@ class GiveawayCommands(commands.Cog):
         if not ga_channel:
             return
 
+        # finally, ask for information confirmation
         embed = discord.Embed(
             title='Giveaway Creation Confirmation',
             description=
@@ -180,28 +186,34 @@ class GiveawayCommands(commands.Cog):
         if response is False:
             return
 
-        if response.content.lower() not in ['y', 'yes']:
-            return
-
+        # create the giveaway based on collected user inputs
         ga_obj = Giveaway.objects.create(**ga_data)
 
+        # send the giveaway embedded message
         try:
             ga_message = await ga_channel.send(embed=ga_obj.embed)
         except discord.HTTPException:
+            await context.say_as_embed('Sending message failed. Please try again.', color='error')
             return
 
+        # get the message ID and save to database
         ga_obj.message_id = ga_message.id
         ga_obj.save()
 
-        try:
-            emoji = self.bot.get_emoji(settings.REACT_EMOJI_ID)
-            if not emoji:
-                print(f'Emoji with ID {settings.REACT_EMOJI_ID} does not exist.')
-                return
-            await ga_message.add_reaction(emoji)
-        except discord.HTTPException:
+        # get the emoji
+        emoji = self.bot.get_emoji(settings.REACT_EMOJI_ID)
+        if not emoji:
+            await context.say_as_embed(f'Emoji with ID {settings.REACT_EMOJI_ID} does not exist.', color='error')
             return
 
+        # try to react with the customized emoji
+        try:
+            await ga_message.add_reaction(emoji)
+        except discord.HTTPException:
+            await context.say_as_embed(f'Reacting with emoji {str(emoji)} failed.', color='error')
+            return
+
+        # after all those checks, it's finally here, phew!
         await context.say_as_embed(
             title='Giveaway Created!',
             description=
@@ -252,11 +264,13 @@ class GiveawayCommands(commands.Cog):
         if discord_message:
             try:
                 await discord_message.delete()
-            except discord.HTTPException as e:
-                print(e)
+            except discord.HTTPException:
                 pass
 
+        # collects the GA ID before deleting it
         ga_obj_id = ga_obj.id
+
+        # deletes the GA object from database
         ga_obj.delete()
 
         await context.say_as_embed(
@@ -283,6 +297,10 @@ class GiveawayCommands(commands.Cog):
         await context.send(file=discord.File(str_data, filename))
 
     @_interactive_setup.error
+    @_end_giveaway.error
+    @_reroll_giveaway.error
+    @_delete_giveaway.error
+    @_request_giveaway_result.error
     async def _error_handler(self, context, error):
         if isinstance(error, MissingManageGuildPermissionAndGiveawayRole):
             await context.say_as_embed(str(error), color='error')

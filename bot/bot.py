@@ -8,7 +8,7 @@ class CustomContext(commands.Context):
     async def say_as_embed(
             self,
             description=None, title=None,
-            embed=None, color='info',
+            embed=None, color=settings.EMBED_DEFAULT_COLOR,
             delete_after=None,
             footer_text=None,
             image_url=None,
@@ -16,7 +16,7 @@ class CustomContext(commands.Context):
     ):
         """Make the bot say as an Embed.
         Passing an 'embed' will send it instead.
-        Shortcut for color kwarg: 'info' (default), 'warning', 'error', 'success'
+        Shortcut for `color` kwarg: 'info', 'warning', 'error', 'success'
         """
 
         if color == 'info':
@@ -80,11 +80,15 @@ class CustomBot(commands.Bot):
             await context.say_as_embed(
                 f'{context.author.mention}, you must have **<@&{error.missing_role}>** role to use this command!',
                 color='error', delete_after=5)
-            await context.message.delete()
+            try:
+                await context.message.delete()
+            except discord.HTTPException:
+                pass
+
             return
 
         if isinstance(error, commands.BadArgument):
-            await context.say_as_embed(str(error), color='error')
+            await context.say_as_embed(str(error), delete_after=5, color='error')
             return
 
         if isinstance(error, commands.MissingRequiredArgument) and context.command.qualified_name != 'help':

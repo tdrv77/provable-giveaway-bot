@@ -26,8 +26,8 @@ async def validate_input(context, inputs, **kwargs):
     authors = kwargs.get('authors', [context.author])
     allow_cancel = kwargs.get('allow_cancel', True)
     timeout = kwargs.get('timeout', 180)
-    max_length = kwargs.get('max_length', 2000)
     only_dm = kwargs.get('only_dm', False)
+    max_length = kwargs.get('max_length', 2000)
 
     if type(authors) != list:
         authors = [authors, ]

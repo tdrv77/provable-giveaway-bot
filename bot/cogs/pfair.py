@@ -153,7 +153,7 @@ class ProvableFairnessCommands(commands.Cog):
         await context.say_as_embed(embed=embed)
 
         response = await validate_input(context, inputs=['y', 'yes', 'n', 'no'])
-        if not response:
+        if response is False:
             return
 
         # stores current server seed to display before changing
@@ -166,7 +166,7 @@ class ProvableFairnessCommands(commands.Cog):
 
         embed = discord.Embed(
             title=f'Provable Fairness Information for {str(context.author)} updated',
-            description=''
+            description=
             f'[CURRENT] User Seed```{user_obj.user_seed}```\n'
             f'[CURRENT] Nonce```{user_obj.nonce}```\n'
             f'[CURRENT] Server Seed - Hashed```{user_obj.server_seed_hashed}```\n'
@@ -177,6 +177,8 @@ class ProvableFairnessCommands(commands.Cog):
         await context.say_as_embed(embed=embed)
 
     @_explain_pfair_algorithm.error
+    @_check_self_pfair_information.error
+    @_generate_new_seed.error
     async def _error_handler(self, context, error):
         pass
 

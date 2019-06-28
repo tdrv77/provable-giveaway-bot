@@ -12,29 +12,29 @@ class OwnerCommands(commands.Cog):
 
     @commands.command(hidden=True)
     @commands.is_owner()
-    async def load(self, ctx, *, module):
+    async def load(self, context, *, module):
         """Loads a module."""
         try:
             self.bot.load_extension(f'{self.path}{module}')
         except commands.ExtensionError:
             self.bot.load_extension(f'{self.path2}{module}')
 
-        await ctx.send('\N{OK HAND SIGN}')
+        await context.send('\N{OK HAND SIGN}')
 
     @commands.command(hidden=True)
     @commands.is_owner()
-    async def unload(self, ctx, *, module):
+    async def unload(self, context, *, module):
         """Unloads a module."""
         try:
             self.bot.unload_extension(f'{self.path}{module}')
         except commands.ExtensionError:
             self.bot.unload_extension(f'{self.path2}{module}')
 
-        await ctx.send('\N{OK HAND SIGN}')
+        await context.send('\N{OK HAND SIGN}')
 
     @commands.command(name='reload', hidden=True)
     @commands.is_owner()
-    async def _reload(self, ctx, *, module):
+    async def _reload(self, context, *, module):
         """Reloads a module."""
 
         try:
@@ -44,7 +44,7 @@ class OwnerCommands(commands.Cog):
             self.bot.unload_extension(f'{self.path2}{module}')
             self.bot.load_extension(f'{self.path2}{module}')
 
-        await ctx.send('\N{OK HAND SIGN}')
+        await context.send('\N{OK HAND SIGN}')
 
     @load.error
     @unload.error
