@@ -293,10 +293,10 @@ class Giveaway(models.Model):
 
     @property
     def time_remaining(self):
-        if not self.passed_ending_time:
-            return process_elapsed_time_text(self.ending_at - timezone.now())
-        else:
+        if self.ended_at or self.passed_ending_time:
             return 'Ended'
+        else:
+            return process_elapsed_time_text(self.ending_at - timezone.now())
 
 
 class Winner(models.Model):
