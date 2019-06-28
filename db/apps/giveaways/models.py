@@ -13,7 +13,7 @@ from utils.time import process_elapsed_time_text
 
 class Giveaway(models.Model):
     creator = models.ForeignKey(DiscordUser, related_name='giveaways', on_delete=models.CASCADE)
-    prize = models.CharField(max_length=200)
+    prize = models.CharField(max_length=400)
     winner_count = models.SmallIntegerField()
     participants = models.ManyToManyField(DiscordUser, related_name='+', blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
