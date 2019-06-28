@@ -93,3 +93,29 @@ Provable-Result Giveaway Discord Bot | Copyright (C) 2019, An Tran
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 For more information, see [LICENSE.md](LICENSE.md)
+
+## Screenshots
+Giveaway creation with `create` command
+
+![creation](https://i.imgur.com/pPeQDZC.png)
+
+Giveaway message
+
+![Giveaway message](https://i.imgur.com/stKETk8.png)
+
+`end` command
+
+![end command](https://i.imgur.com/EtY9pK3.png)
+
+`reroll` command
+
+![reroll command](https://i.imgur.com/FmVuAye.png)
+
+`delete` command
+
+![delete command](https://i.imgur.com/K2Uddtw.png)
+
+`result` command
+
+![result command](https://i.imgur.com/QArFtM2.png)
+

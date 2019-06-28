@@ -68,7 +68,7 @@ class GiveawayCommands(commands.Cog):
         if response is False:
             return
 
-        ga_data['prize'] = response.content
+        ga_data['prize'] = discord.utils.escape_markdown(response.content)
 
         # step 2/4: Ask for number of winners
         await context.say_as_embed(
